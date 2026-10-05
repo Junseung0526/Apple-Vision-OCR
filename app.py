@@ -67,12 +67,13 @@ def run_ocr_worker(
     reading_order: str,
     fast_mode: bool,
     generate_txt: bool,
-    generate_md: bool
+    generate_md: bool,
+    chunk_size: int = 20
 ):
     job = JOBS[job_id]
     job["status"] = "processing"
     job["start_time"] = time.time()
-    logger.info("Job %s started for file %s", job_id, input_file.name)
+    logger.info("Job %s started for file %s (chunk_size: %d)", job_id, input_file.name, chunk_size)
 
     def progress_callback(curr: int, tot: int, msg: str):
         job["current_page"] = curr
@@ -97,6 +98,7 @@ def run_ocr_worker(
             fast_mode=fast_mode,
             generate_txt=generate_txt,
             generate_md=generate_md,
+            chunk_size=chunk_size,
             progress_callback=progress_callback
         )
         job["status"] = "completed"
@@ -110,7 +112,7 @@ def run_ocr_worker(
         logger.error("Job %s failed: %s", job_id, e)
         job["status"] = "failed"
         job["error"] = str(e)
-        job["message"] = f"오류 발생: {e}"
+        job["message"] = str(e)
 
 
 @app.get("/api/system-info")
@@ -168,7 +170,8 @@ def start_ocr(
     reading_order: str = Form("ltr"),
     fast_mode: bool = Form(False),
     generate_txt: bool = Form(True),
-    generate_md: bool = Form(True)
+    generate_md: bool = Form(True),
+    chunk_size: int = Form(20)
 ):
     target_path = Path(file_path).resolve()
     if not target_path.exists():
@@ -208,7 +211,8 @@ def start_ocr(
             reading_order,
             fast_mode,
             generate_txt,
-            generate_md
+            generate_md,
+            chunk_size
         ),
         daemon=True
     )

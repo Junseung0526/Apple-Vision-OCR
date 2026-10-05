@@ -1,6 +1,8 @@
 """
 Apple Vision OCR Processing Engine
 Core pipeline for local, lossless searchable PDF generation and text extraction.
+Features chunked processing for large PDFs, real-time progress streaming,
+and robust subprocess error handling.
 """
 
 import os
@@ -9,6 +11,7 @@ import sys
 import time
 import shutil
 import logging
+import tempfile
 import subprocess
 from pathlib import Path
 from typing import Callable, Optional, List, Dict, Any
@@ -26,6 +29,7 @@ SUPPORTED_LANGUAGES = {
 }
 
 SUPPORTED_IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".tiff", ".tif", ".webp", ".bmp"}
+DEFAULT_CHUNK_SIZE = 20
 
 
 def check_mac_ocr_installed() -> bool:
@@ -56,6 +60,99 @@ def validate_pdf(pdf_path: Path) -> int:
         return page_count
     finally:
         doc.close()
+
+
+def format_process_error(returncode: int, stderr_output: str = "") -> str:
+    """
+    Analyzes non-zero exit codes and stderr to produce user-friendly error messages,
+    specifically detecting OOM (SIGKILL), segmentation faults, aborts, and external terminations.
+    """
+    stderr_clean = (stderr_output or "").strip()
+
+    # Exit code analysis
+    if returncode in (-9, 137, 9):
+        reason = "작업 실패: 프로세스 메모리 초과 (OOM / SIGKILL에 의해 비정상 종료되었습니다. 청크 크기를 줄이거나 시스템 메모리를 확보하십시오.)"
+    elif returncode in (-11, 139, 11):
+        reason = "작업 실패: 프로세스 메모리 참조 오류 (Segmentation Fault / SIGSEGV)"
+    elif returncode in (-6, 134, 6):
+        reason = "작업 실패: 프로세스 비정상 중단 (SIGABRT)"
+    elif returncode in (-15, 143, 15):
+        reason = "작업 실패: 프로세스가 외부 신호에 의해 강제 종료되었습니다 (SIGTERM)"
+    elif returncode in (-2, 130, 2):
+        reason = "작업 중단: 사용자에 의해 프로세스가 중단되었습니다 (SIGINT)"
+    elif returncode < 0:
+        reason = f"작업 실패: 프로세스가 시그널 {abs(returncode)}에 의해 비정상 종료되었습니다."
+    else:
+        if stderr_clean:
+            reason = f"작업 실패: OCR 엔진 오류 ({stderr_clean})"
+        else:
+            reason = f"작업 실패: 프로세스 비정상 종료 (종료 코드: {returncode})"
+
+    if stderr_clean and returncode in (-9, 137, 9, -11, 139, 11, -6, 134, 6, -15, 143, 15):
+        reason += f" [상세: {stderr_clean}]"
+
+    return reason
+
+
+def _run_mac_ocr_command(
+    cmd: List[str],
+    chunk_start_page: int,
+    chunk_page_count: int,
+    total_pages: int,
+    chunk_index: int,
+    total_chunks: int,
+    progress_callback: Optional[Callable[[int, int, str], None]] = None
+) -> None:
+    """
+    Executes mac-ocr CLI for a single chunk or image, parses page progress in real time,
+    and rigorously checks for non-zero exit codes.
+    """
+    logger.info("Executing mac-ocr: %s", " ".join(cmd))
+
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        bufsize=1
+    )
+
+    progress_pattern = re.compile(r"\[(\d+)/(\d+)\]")
+    buffer = ""
+
+    last_reported_page = -1
+
+    while True:
+        char = process.stdout.read(1)
+        if not char:
+            break
+        buffer += char
+        if char == "]" or char in ("\r", "\n"):
+            match = progress_pattern.search(buffer)
+            if match:
+                c_page = int(match.group(1))
+                if c_page > 0:
+                    global_curr = min(total_pages, chunk_start_page + c_page)
+                    if global_curr != last_reported_page:
+                        last_reported_page = global_curr
+                        if progress_callback and total_pages > 0:
+                            pct = int((global_curr / total_pages) * 100)
+                            progress_callback(
+                                global_curr,
+                                total_pages,
+                                f"OCR 진행 중: {global_curr}/{total_pages} ({pct}%) [청크 {chunk_index + 1}/{total_chunks}]"
+                            )
+                buffer = ""
+            elif char in ("\r", "\n"):
+                buffer = ""
+
+    stderr_output = process.stderr.read()
+    process.wait()
+
+    if process.returncode != 0:
+        err_msg = format_process_error(process.returncode, stderr_output)
+        logger.error("mac-ocr execution failed (exit code %d): %s", process.returncode, err_msg)
+        raise RuntimeError(err_msg)
 
 
 def split_pdf_spreads(
@@ -114,6 +211,30 @@ def split_pdf_spreads(
     return out_pages
 
 
+def merge_pdf_chunks(chunk_paths: List[Path], output_pdf_path: Path) -> None:
+    """
+    Losslessly merges multiple searchable PDF chunks into a single destination PDF using PyMuPDF.
+    Preserves all page dimensions, embedded fonts, image streams, and OCR text layers.
+    """
+    if not chunk_paths:
+        raise ValueError("병합할 청크 파일 목록이 비어 있습니다.")
+
+    logger.info("Losslessly merging %d PDF chunks into %s", len(chunk_paths), output_pdf_path)
+    merged_doc = pymupdf.open()
+    try:
+        for p in chunk_paths:
+            chunk_doc = pymupdf.open(str(p))
+            try:
+                merged_doc.insert_pdf(chunk_doc)
+            finally:
+                chunk_doc.close()
+        merged_doc.save(str(output_pdf_path), garbage=3, deflate=True)
+        total_merged = len(merged_doc)
+    finally:
+        merged_doc.close()
+    logger.info("PDF merge completed successfully: %s (total pages: %d)", output_pdf_path, total_merged)
+
+
 def extract_text_and_markdown(
     pdf_path: str,
     output_txt_path: Optional[str] = None,
@@ -169,10 +290,11 @@ def process_ocr(
     generate_txt: bool = True,
     generate_md: bool = True,
     ocr_all_pages: bool = True,
+    chunk_size: int = DEFAULT_CHUNK_SIZE,
     progress_callback: Optional[Callable[[int, int, str], None]] = None
 ) -> Dict[str, Any]:
     """
-    Executes the full OCR pipeline.
+    Executes the full OCR pipeline with batch chunking for large documents.
     
     Args:
         input_path: File path of input PDF or image.
@@ -184,6 +306,7 @@ def process_ocr(
         generate_txt: Whether to generate .txt file.
         generate_md: Whether to generate .md file.
         ocr_all_pages: Whether to re-OCR pages that already contain text.
+        chunk_size: Number of pages per OCR chunk (default 20, keeps RAM < 500MB).
         progress_callback: Callback function receiving (current_page, total_pages, message).
         
     Returns:
@@ -208,94 +331,131 @@ def process_ocr(
     if languages is None:
         languages = ["ko-KR", "en-US"]
 
+    if chunk_size < 1:
+        chunk_size = DEFAULT_CHUNK_SIZE
+
     is_pdf = input_p.suffix.lower() == ".pdf"
-    temp_split_pdf: Optional[Path] = None
 
-    # Step 1: Validation
-    if is_pdf:
-        total_pages = validate_pdf(input_p)
-    else:
-        total_pages = 1
+    # Temporary directory for clean isolation and guaranteed cleanup
+    with tempfile.TemporaryDirectory(prefix=f"bookocr_{base_name}_") as temp_dir_str:
+        temp_dir = Path(temp_dir_str)
+        logger.info("Initialized temporary working directory: %s", temp_dir)
 
-    # Step 2: 2-page spread split if enabled
-    target_to_ocr = input_p
-    if is_pdf and split_spreads:
-        temp_split_pdf = out_dir / f"_temp_split_{base_name}.pdf"
-        if progress_callback:
-            progress_callback(0, total_pages, "2페이지 펼침면 분할 처리 중...")
-        total_pages = split_pdf_spreads(
-            str(input_p),
-            str(temp_split_pdf),
-            reading_order=reading_order,
-            progress_callback=progress_callback
-        )
-        target_to_ocr = temp_split_pdf
-
-    if progress_callback:
-        progress_callback(0, total_pages, f"Apple Vision OCR 초기화 중 (총 {total_pages}페이지)")
-
-    # Step 3: Run mac-ocr CLI
-    cmd = ["mac-ocr", "searchable-pdf", str(target_to_ocr), "-o", str(final_pdf_path)]
-
-    for lang in languages:
-        cmd.extend(["-l", lang])
-
-    if ocr_all_pages:
-        cmd.append("--ocr-all-pages")
-
-    if fast_mode:
-        cmd.append("--fast")
-
-    logger.info("Executing mac-ocr: %s", " ".join(cmd))
-
-    process = subprocess.Popen(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        bufsize=1
-    )
-
-    progress_pattern = re.compile(r"\[(\d+)/(\d+)\]")
-    buffer = ""
-    current_page = 0
-
-    while True:
-        char = process.stdout.read(1)
-        if not char:
-            break
-        if char in ("\r", "\n"):
-            match = progress_pattern.search(buffer)
-            if match:
-                current_page = int(match.group(1))
-                tot = int(match.group(2))
-                if progress_callback:
-                    pct = int((current_page / tot) * 100) if tot > 0 else 0
-                    progress_callback(
-                        current_page,
-                        tot,
-                        f"OCR 진행 중: {current_page}/{tot} ({pct}%)"
-                    )
-            buffer = ""
+        # Step 1: Validation
+        if is_pdf:
+            total_pages = validate_pdf(input_p)
         else:
-            buffer += char
+            total_pages = 1
 
-    stderr_output = process.stderr.read()
-    process.wait()
+        target_to_ocr = input_p
 
-    if process.returncode != 0:
-        err_msg = stderr_output.strip() or f"프로세스 종료 코드: {process.returncode}"
-        logger.error("mac-ocr execution failed: %s", err_msg)
-        raise RuntimeError(f"OCR 엔진 처리 실패: {err_msg}")
+        # Step 2: 2-page spread split if enabled
+        if is_pdf and split_spreads:
+            temp_split_pdf = temp_dir / f"spread_split_{base_name}.pdf"
+            if progress_callback:
+                progress_callback(0, total_pages, "2페이지 펼침면 분할 처리 중...")
+            total_pages = split_pdf_spreads(
+                str(input_p),
+                str(temp_split_pdf),
+                reading_order=reading_order,
+                progress_callback=progress_callback
+            )
+            target_to_ocr = temp_split_pdf
 
-    # Cleanup temporary spread PDF
-    if temp_split_pdf and temp_split_pdf.exists():
-        try:
-            temp_split_pdf.unlink()
-        except Exception as e:
-            logger.warning("Failed to remove temporary file %s: %e", temp_split_pdf, e)
+        if progress_callback:
+            progress_callback(0, total_pages, f"Apple Vision OCR 초기화 중 (총 {total_pages}페이지, 청크 크기: {chunk_size})")
 
-    # Step 4: Text extraction
+        # Step 3: OCR Processing
+        if is_pdf:
+            # Chunk-based processing for PDFs
+            chunk_ranges = []
+            for start in range(0, total_pages, chunk_size):
+                end = min(start + chunk_size, total_pages)
+                chunk_ranges.append((start, end))
+
+            total_chunks = len(chunk_ranges)
+            logger.info("Processing %d pages in %d chunks (chunk size: %d)", total_pages, total_chunks, chunk_size)
+
+            ocr_chunk_paths: List[Path] = []
+
+            for chunk_idx, (start_idx, end_idx) in enumerate(chunk_ranges):
+                chunk_page_count = end_idx - start_idx
+                chunk_in_path = temp_dir / f"chunk_{chunk_idx:04d}_in.pdf"
+                chunk_out_path = temp_dir / f"chunk_{chunk_idx:04d}_ocr.pdf"
+
+                # Extract chunk losslessly from source
+                src_doc = pymupdf.open(str(target_to_ocr))
+                chunk_doc = pymupdf.open()
+                chunk_doc.insert_pdf(src_doc, from_page=start_idx, to_page=end_idx - 1)
+                src_doc.close()
+                chunk_doc.save(str(chunk_in_path), garbage=3, deflate=True)
+                chunk_doc.close()
+
+                # Build mac-ocr command for the chunk
+                cmd = ["mac-ocr", "searchable-pdf", str(chunk_in_path), "-o", str(chunk_out_path)]
+                for lang in languages:
+                    cmd.extend(["-l", lang])
+                if ocr_all_pages:
+                    cmd.append("--ocr-all-pages")
+                if fast_mode:
+                    cmd.append("--fast")
+
+                try:
+                    _run_mac_ocr_command(
+                        cmd=cmd,
+                        chunk_start_page=start_idx,
+                        chunk_page_count=chunk_page_count,
+                        total_pages=total_pages,
+                        chunk_index=chunk_idx,
+                        total_chunks=total_chunks,
+                        progress_callback=progress_callback
+                    )
+                finally:
+                    # Clean up input chunk immediately to conserve disk space
+                    if chunk_in_path.exists():
+                        try:
+                            chunk_in_path.unlink()
+                        except Exception as e:
+                            logger.warning("Failed to delete temp input chunk %s: %s", chunk_in_path, e)
+
+                if not chunk_out_path.exists() or chunk_out_path.stat().st_size == 0:
+                    raise RuntimeError(f"청크 OCR 결과 파일이 생성되지 않았습니다: {chunk_out_path.name}")
+
+                ocr_chunk_paths.append(chunk_out_path)
+
+                # Report chunk completion progress
+                if progress_callback:
+                    progress_callback(
+                        end_idx,
+                        total_pages,
+                        f"청크 완료: {chunk_idx + 1}/{total_chunks} ({end_idx}/{total_pages}페이지)"
+                    )
+
+            # Step 4: Lossless merge of all chunks
+            if progress_callback:
+                progress_callback(total_pages, total_pages, "OCR 청크 무손실 병합 중...")
+
+            merge_pdf_chunks(ocr_chunk_paths, final_pdf_path)
+
+        else:
+            # Direct processing for single image files
+            cmd = ["mac-ocr", "searchable-pdf", str(input_p), "-o", str(final_pdf_path)]
+            for lang in languages:
+                cmd.extend(["-l", lang])
+            if fast_mode:
+                cmd.append("--fast")
+
+            _run_mac_ocr_command(
+                cmd=cmd,
+                chunk_start_page=0,
+                chunk_page_count=1,
+                total_pages=1,
+                chunk_index=0,
+                total_chunks=1,
+                progress_callback=progress_callback
+            )
+
+    # Step 5: Text extraction from merged searchable PDF
     text_data = {}
     if final_pdf_path.exists() and (generate_txt or generate_md):
         if progress_callback:

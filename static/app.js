@@ -28,6 +28,10 @@ const TRANSLATIONS = {
     out_md: "마크다운 문서 (.md, 구조화 헤더)",
     fast_title: "고속 모드 (Fast Mode)",
     fast_desc: "인식 정확도 대신 처리 속도를 우선시합니다.",
+    chunk_label: "청크 분할 단위 (메모리 보호)",
+    opt_chunk_10: "10페이지 단위 (초저메모리 모드, 권장 RAM 8GB 이하)",
+    opt_chunk_20: "20페이지 단위 (기본 권장, 메모리 500MB 이하 유지)",
+    opt_chunk_50: "50페이지 단위 (고성능 Apple Silicon)",
     btn_start: "OCR 처리 시작",
     section3_title: "3. 처리 상태 및 결과 (Status & Output)",
     idle_hint: "문서를 선택하고 옵션을 설정한 후 처리 시작 버튼을 클릭하십시오.",
@@ -78,6 +82,10 @@ const TRANSLATIONS = {
     out_md: "Markdown (.md, structured headers)",
     fast_title: "Fast Recognition Mode",
     fast_desc: "Prioritize throughput over maximum recognition accuracy.",
+    chunk_label: "Batch Chunk Size (Memory Protection)",
+    opt_chunk_10: "10 Pages (Ultra-low memory, RAM <= 8GB)",
+    opt_chunk_20: "20 Pages (Default recommended, RAM < 500MB)",
+    opt_chunk_50: "50 Pages (High performance Apple Silicon)",
     btn_start: "Start OCR Processing",
     section3_title: "3. Status & Output",
     idle_hint: "Select a document, configure options, and click Start OCR Processing.",
@@ -151,6 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const readingOrderSelect = document.getElementById('reading-order');
   const languageSelect = document.getElementById('language-select');
   const fastModeCheck = document.getElementById('fast-mode');
+  const chunkSizeSelect = document.getElementById('chunk-size-select');
   const genTxtCheck = document.getElementById('gen-txt');
   const genMdCheck = document.getElementById('gen-md');
 
@@ -299,6 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
     formData.append('split_spreads', splitSpreadsCheck.checked);
     formData.append('reading_order', readingOrderSelect.value);
     formData.append('fast_mode', fastModeCheck.checked);
+    formData.append('chunk_size', chunkSizeSelect ? chunkSizeSelect.value : '20');
     formData.append('generate_txt', genTxtCheck.checked);
     formData.append('generate_md', genMdCheck.checked);
 
@@ -357,7 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (job.status === 'failed') {
         activeEventSource.close();
         activeEventSource = null;
-        alert(`Failed: ${job.error || 'Unknown error'}`);
+        alert(job.error || (currentLang === 'ko' ? '작업이 실패했습니다.' : 'Task failed.'));
         showIdleView();
       }
     };

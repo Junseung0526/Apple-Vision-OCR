@@ -69,8 +69,9 @@ Apple Human Interface Guidelines에 기반한 미니멀 웹 대시보드(FastAPI
 ### 핵심 엔지니어링 구현
 
 1. **무손실 스트림 인젝션 (Lossless Stream Injection)**: 문서를 다시 래스터화하여 저화질 JPEG로 재압축하는 일반 도구들과 달리, 원본 PDF의 XObject 딕셔너리와 DCT 스트림을 비트 단위로 그대로 보존합니다. Vision 엔진이 인식한 각 단어의 절대 좌표 위에 CoreGraphics의 `kCGTextInvisible` 텍스트 연산자를 사용하여 투명 텍스트 레이어만 주입합니다.
-2. **펼침면 무손실 분할 (Spread De-composition)**: 북스캔 시 2페이지가 가로 1장에 스캔된 경우, 종횡비($W/H > 1.15$)를 분석하여 페이지를 물리적으로 재압축하지 않고 PDF 내부 뷰포트 클리핑만으로 독립된 세로 2페이지로 완벽하게 분할합니다.
-3. **다중 포맷 동시 추출**: PDF 생성과 동시에 각 페이지의 텍스트를 구조화하여 페이지 구분 헤더가 포함된 `.txt` 및 `.md` 파일을 빌드합니다. 생성된 파일은 Obsidian, Notion, 또는 로컬 LLM(RAG) 파이프라인의 지식 베이스로 즉시 활용할 수 있습니다.
+2. **배치 청크 분할 및 무손실 병합 (Memory-Safe Chunking & Lossless Merge)**: 500페이지 이상의 대용량 고해상도 스캔본 처리 시 발생하는 프로세스 OOM(Silent Exit)을 원천 차단하기 위해, 문서를 10~20페이지 단위의 임시 청크로 분할하여 순차 처리합니다. 작업 메모리 점유율을 500MB 이하로 엄격히 유지하며, 완료 후 PyMuPDF로 무손실 병합(Lossless Merge)하고 임시 파일은 100% 자동 정리(Cleanup)됩니다.
+3. **펼침면 무손실 분할 (Spread De-composition)**: 북스캔 시 2페이지가 가로 1장에 스캔된 경우, 종횡비($W/H > 1.15$)를 분석하여 페이지를 물리적으로 재압축하지 않고 PDF 내부 뷰포트 클리핑만으로 독립된 세로 2페이지로 완벽하게 분할합니다.
+4. **다중 포맷 동시 추출**: PDF 생성과 동시에 각 페이지의 텍스트를 구조화하여 페이지 구분 헤더가 포함된 `.txt` 및 `.md` 파일을 빌드합니다. 생성된 파일은 Obsidian, Notion, 또는 로컬 LLM(RAG) 파이프라인의 지식 베이스로 즉시 활용할 수 있습니다.
 
 ---
 
@@ -165,6 +166,9 @@ python3 cli.py manga.pdf --split-spread --rtl --lang ja-en
 
 # 고속 모드 (인식률 대신 처리량 극대화)
 python3 cli.py scan.pdf --fast
+
+# 대용량 PDF 청크 분할 단위 설정 (기본: 20페이지 단위, 메모리 500MB 이하 유지)
+python3 cli.py scan.pdf --chunk-size 10
 
 # CLI 출력 언어 명시적 지정 (ko 또는 en)
 python3 cli.py scan.pdf --locale ko

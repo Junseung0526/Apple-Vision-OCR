@@ -69,8 +69,9 @@ Evaluated on a 320-page Korean/English book scan (300 DPI, uncompressed PDF, 210
 ### Engineering Details
 
 1. **Lossless Stream Injection**: Rather than re-rasterizing the document into compressed JPEG/PNG artifacts, the original PDF XObject dictionary and DCT streams are preserved bit-for-bit. Recognized character boundaries are synthesized into an overlay content stream using `kCGTextInvisible` / CoreGraphics text operators.
-2. **Spread De-composition**: Bound book scans often feature two landscape pages on a single physical scan sheet. The engine analyzes page aspect ratios ($W/H > 1.15$) and splits them geometrically into independent portrait coordinate spaces, preserving native resolution without decompression cycles.
-3. **Multi-Format Extraction**: In parallel with PDF generation, page boundary markers are parsed to produce clean, linear text files and Markdown documents suitable for ingestion into retrieval-augmented generation (RAG) pipelines, Notion, or Obsidian.
+2. **Memory-Safe Batch Chunking & Lossless Merge**: To prevent process OOM (silent exit) when handling large high-resolution scanned books (> 500 pages), the pipeline automatically partitions documents into 10–20 page temporary chunks. Peak RSS memory is strictly capped under 500MB, chunks are losslessly merged via PyMuPDF upon completion, and all temporary chunk files are automatically cleaned up.
+3. **Spread De-composition**: Bound book scans often feature two landscape pages on a single physical scan sheet. The engine analyzes page aspect ratios ($W/H > 1.15$) and splits them geometrically into independent portrait coordinate spaces, preserving native resolution without decompression cycles.
+4. **Multi-Format Extraction**: In parallel with PDF generation, page boundary markers are parsed to produce clean, linear text files and Markdown documents suitable for ingestion into retrieval-augmented generation (RAG) pipelines, Notion, or Obsidian.
 
 ---
 
@@ -165,6 +166,9 @@ python3 cli.py manga.pdf --split-spread --rtl --lang ja-en
 
 # Fast mode (throughput-prioritized recognition)
 python3 cli.py document.pdf --fast
+
+# Batch chunk size for large PDFs (default: 20 pages, keeps RAM < 500MB)
+python3 cli.py document.pdf --chunk-size 10
 
 # Explicit CLI locale selection (ko or en)
 python3 cli.py document.pdf --locale en

@@ -119,6 +119,15 @@
           </label>
         </div>
 
+        <div class="form-group">
+          <label for="chunk-size-select" class="field-label" data-i18n="chunk_label">청크 분할 단위 (메모리 보호)</label>
+          <select id="chunk-size-select" class="select-field">
+            <option value="10" data-i18n="opt_chunk_10">10페이지 단위 (초저메모리 모드, 권장 RAM 8GB 이하)</option>
+            <option value="20" data-i18n="opt_chunk_20" selected>20페이지 단위 (기본 권장, 메모리 500MB 이하 유지)</option>
+            <option value="50" data-i18n="opt_chunk_50">50페이지 단위 (고성능 Apple Silicon)</option>
+          </select>
+        </div>
+
         <button type="button" class="btn btn-primary btn-full" id="start-btn" data-i18n="btn_start" disabled>
           OCR 처리 시작
         </button>

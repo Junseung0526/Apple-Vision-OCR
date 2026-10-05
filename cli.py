@@ -113,6 +113,7 @@ Examples:
     parser.add_argument("-l", "--lang", choices=list(SUPPORTED_LANGUAGES.keys()), default="ko-en",
                         help="Language profile (default: ko-en [Korean + English])")
     parser.add_argument("--fast", action="store_true", help="Enable fast recognition mode (prioritize speed over accuracy)")
+    parser.add_argument("--chunk-size", type=int, default=20, help="Number of pages per OCR chunk for memory safety (default: 20)")
     parser.add_argument("--no-txt", action="store_true", help="Do not generate .txt file")
     parser.add_argument("--no-md", action="store_true", help="Do not generate .md file")
     parser.add_argument("--open", action="store_true", help="Reveal generated PDF in Finder upon completion")
@@ -158,6 +159,7 @@ Examples:
             fast_mode=args.fast,
             generate_txt=not args.no_txt,
             generate_md=not args.no_md,
+            chunk_size=args.chunk_size,
             progress_callback=progress_callback
         )
         print("\n------------------------------------------------------------")
