@@ -12,7 +12,7 @@
 [ [English](README.md) | 한국어 ]
 
 <p align="center">
-  <img src="assets/dashboard_preview.png" alt="Apple-Vision-OCR 웹 대시보드" width="920" />
+  <img src="assets/dashboard_preview_ko.png" alt="Apple-Vision-OCR 웹 대시보드" width="920" />
 </p>
 
 `Apple-Vision-OCR`는 macOS 환경에 최적화된 고성능 온디바이스(On-Device) OCR 및 문서 디지털화 파이프라인입니다. Apple 네이티브 Vision 프레임워크와 Apple Neural Engine(ANE) 하드웨어 가속을 활용하여 원본 이미지 스트림을 전혀 재압축하거나 손상시키지 않고, 정확한 문자 좌표 레이어를 결합한 무손실 Searchable PDF를 생성합니다.
@@ -140,10 +140,14 @@ python3 app.py
 
 웹 브라우저에서 `http://localhost:8765` 로 접속합니다:
 
+<p align="center">
+  <img src="assets/dashboard_completed_ko.png" alt="Apple-Vision-OCR 변환 완료 화면" width="920" />
+</p>
+
 - **실시간 다국어 전환**: 상단 헤더의 `한국어 | English` 버튼으로 인터페이스 언어를 즉시 전환할 수 있습니다.
 - **드래그 앤 드롭 파일 수신**: PDF나 이미지를 끌어다 놓으면 페이지 수와 파일 용량이 즉시 검증되어 표시됩니다.
 - **실시간 SSE 스트리밍**: Server-Sent Events 기반으로 진행 페이지, 초당 처리 속도, 예상 완료 시간을 실시간으로 모니터링합니다.
-- **Finder 파일 즉시 확인**: 변환 완료 후 버튼 클릭 한 번으로 생성된 결과물을 macOS Finder에서 즉시 열람할 수 있습니다.
+- **Finder 파일 즉시 확인 및 산출물 다운로드**: Searchable PDF, 텍스트, 마크다운 산출물을 직접 다운로드하거나, 버튼 클릭 한 번으로 생성된 결과물을 macOS Finder에서 즉시 열람할 수 있습니다.
 
 ### 2. 터미널 명령행 인터페이스 (CLI)
 

@@ -12,7 +12,7 @@
 [ English | [한국어](README.ko.md) ]
 
 <p align="center">
-  <img src="assets/dashboard_preview.png" alt="Apple-Vision-OCR Dashboard" width="920" />
+  <img src="assets/dashboard_preview_en.png" alt="Apple-Vision-OCR Dashboard (English)" width="920" />
 </p>
 
 `Apple-Vision-OCR` is a high-throughput, on-device OCR pipeline and document digitization suite designed specifically for macOS. Utilizing Apple's native Vision framework and the Apple Neural Engine (ANE), it embeds precision-aligned, invisible text layers directly into scanned PDF files without modifying or recompressing the underlying image streams.
@@ -140,10 +140,14 @@ Alternatively, double-click the macOS launcher script in Finder:
 
 The web dashboard is served at `http://localhost:8765`:
 
+<p align="center">
+  <img src="assets/dashboard_completed_en.png" alt="Apple-Vision-OCR Completed Dashboard (English)" width="920" />
+</p>
+
 - **Dynamic Bilingual Switching**: Toggle between `한국어` and `English` in real-time via the header control.
 - **Drag-and-Drop Ingestion**: Drop PDF or image files to view immediate container validation and page counts.
 - **Live SSE Streaming**: Monitor recognition progress, processing speed (pages/sec), and time-to-completion estimates via Server-Sent Events.
-- **Direct Finder Integration**: Reveal output artifacts directly in macOS Finder with a single click.
+- **Artifact Export & Finder Integration**: Download Searchable PDF, Plain Text, or Markdown artifacts, or reveal outputs directly in macOS Finder with a single click.
 
 ### 2. Command-Line Interface (CLI)
 

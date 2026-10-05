@@ -103,7 +103,9 @@ const TRANSLATIONS = {
   }
 };
 
-let currentLang = localStorage.getItem('apple_vision_ocr_lang') || 'ko';
+const urlParams = new URLSearchParams(window.location.search);
+const langParam = urlParams.get('lang');
+let currentLang = (langParam === 'en' || langParam === 'ko') ? langParam : (localStorage.getItem('apple_vision_ocr_lang') || 'ko');
 
 function setLanguage(lang) {
   currentLang = lang;
