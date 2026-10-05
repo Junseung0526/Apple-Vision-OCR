@@ -25,6 +25,7 @@ _temp*
 *.jpeg
 *.tiff
 *.webp
+!assets/**
 
 # macOS System Files
 .DS_Store

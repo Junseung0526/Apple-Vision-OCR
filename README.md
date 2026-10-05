@@ -11,6 +11,10 @@
 
 [ English | [한국어](README.ko.md) ]
 
+<p align="center">
+  <img src="assets/dashboard_preview.png" alt="Apple-Vision-OCR Dashboard" width="920" />
+</p>
+
 `Apple-Vision-OCR` is a high-throughput, on-device OCR pipeline and document digitization suite designed specifically for macOS. Utilizing Apple's native Vision framework and the Apple Neural Engine (ANE), it embeds precision-aligned, invisible text layers directly into scanned PDF files without modifying or recompressing the underlying image streams.
 
 The suite provides both an Apple Human Interface Guidelines-styled Web Dashboard (FastAPI + Server-Sent Events) with dynamic bilingual switching, and a UNIX-compliant scriptable Command-Line Interface (CLI).

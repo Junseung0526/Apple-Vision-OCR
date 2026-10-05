@@ -11,6 +11,10 @@
 
 [ [English](README.md) | 한국어 ]
 
+<p align="center">
+  <img src="assets/dashboard_preview.png" alt="Apple-Vision-OCR 웹 대시보드" width="920" />
+</p>
+
 `Apple-Vision-OCR`는 macOS 환경에 최적화된 고성능 온디바이스(On-Device) OCR 및 문서 디지털화 파이프라인입니다. Apple 네이티브 Vision 프레임워크와 Apple Neural Engine(ANE) 하드웨어 가속을 활용하여 원본 이미지 스트림을 전혀 재압축하거나 손상시키지 않고, 정확한 문자 좌표 레이어를 결합한 무손실 Searchable PDF를 생성합니다.
 
 Apple Human Interface Guidelines에 기반한 미니멀 웹 대시보드(FastAPI + Server-Sent Events, 한/영 실시간 전환 지원)와 UNIX 표준 스크립터블 CLI를 모두 제공합니다.
