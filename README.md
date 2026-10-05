@@ -1,5 +1,7 @@
 # Apple-Vision-OCR
 
+[ English | [한국어](README.ko.md) ]
+
 A high-performance, on-device OCR tool that creates lossless Searchable PDFs using Apple's native Vision framework and the Apple Neural Engine (ANE). Includes both a minimal Web Dashboard and a scriptable CLI.
 
 ---
@@ -18,7 +20,7 @@ Scanned books and documents are typically image-only files lacking selectable or
 - **Hardware-Accelerated Recognition**: Leverages the Apple Neural Engine on Apple Silicon (`M1/M2/M3/M4`) to process typical 300-page volumes in 1 to 2 minutes.
 - **Two-Page Spread Splitting**: Automatically detects landscape spreads (e.g., two bound book pages scanned into a single page) and segments them into sequential portrait pages in Left-to-Right (LTR) or Right-to-Left (RTL) reading order.
 - **Multi-Format Export**: Generates `.pdf` along with structured plain text (`.txt`) and Markdown (`.md`) partitioned by page numbers for Obsidian, Notion, or LLM context ingestion.
-- **Web Dashboard & Scriptable CLI**: Offers a minimalist macOS-styled Web UI (FastAPI + Server-Sent Events) and a UNIX-compliant command-line interface.
+- **Web Dashboard & Scriptable CLI**: Offers a minimalist macOS-styled Web UI (FastAPI + Server-Sent Events) with Korean/English dynamic switching and a UNIX-compliant command-line interface.
 - **Zero Cloud Dependence**: 100% on-device processing. No data leaves the machine.
 
 ---
@@ -107,7 +109,7 @@ Or execute the launcher script:
 ./start.command
 ```
 
-Open `http://localhost:8765` in any browser. Drag and drop the scanned PDF or image, select options, and click **OCR 처리 시작**. Real-time progress is streamed via Server-Sent Events (SSE).
+Open `http://localhost:8765` in any browser. The dashboard supports real-time switching between English and Korean via the language toggle in the header. Drag and drop the scanned PDF or image, select options, and click **Start OCR Processing**. Real-time progress is streamed via Server-Sent Events (SSE).
 
 ### 2. Command-Line Interface (CLI)
 
@@ -125,6 +127,9 @@ python3 cli.py manga.pdf --split-spread --rtl --lang ja-en
 
 # Fast mode (lower recognition overhead)
 python3 cli.py document.pdf --fast
+
+# Specify CLI language (ko or en)
+python3 cli.py document.pdf --locale en
 
 # Output to a custom directory and reveal in Finder upon completion
 python3 cli.py document.pdf -o ./output --open
@@ -161,6 +166,7 @@ options:
   --no-txt              Skip .txt file generation
   --no-md               Skip .md file generation
   --open                Reveal output PDF in macOS Finder upon completion
+  --locale {ko,en}      Interface language for CLI output
 ```
 
 ---
