@@ -1,0 +1,39 @@
+# Python
+.venv/
+env/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Project Data and Artifacts
+input/
+uploads/
+output/
+*.pdf
+*.ocr.pdf
+_temp*
+*.txt
+!requirements.txt
+*.md.tmp
+
+# Image and Cache Files
+*.png
+*.jpg
+*.jpeg
+*.tiff
+*.webp
+
+# macOS System Files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Logs & Environment
+*.log
+.env
