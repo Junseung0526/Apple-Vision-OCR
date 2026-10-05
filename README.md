@@ -224,6 +224,16 @@ Apple-Vision-OCR/
 
 ---
 
+## Legal Disclaimer & Fair Use
+
+`Apple-Vision-OCR` is developed and distributed strictly for personal productivity, research, and private study under applicable fair use provisions (e.g., Fair Use under 17 U.S.C. § 107, Article 30 of the Korean Copyright Act).
+
+- **Personal & Private Use Only**: Users are responsible for ensuring that digital reproduction and text recognition of documents are conducted solely for their own private use within legally permissible boundaries.
+- **Redistribution Prohibited**: OCR-processed documents containing copyrighted material must not be redistributed, shared publicly, transmitted to third parties, or monetized under any circumstances.
+- **Limitation of Liability**: The authors and contributors assume no responsibility or liability for any unlawful use, unauthorized reproduction, or copyright infringement committed by end users.
+
+---
+
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for complete details.
