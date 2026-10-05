@@ -1,6 +1,141 @@
-// Apple-Vision-OCR Web Client
+// Apple-Vision-OCR Bilingual Web Client
+
+const TRANSLATIONS = {
+  ko: {
+    navbar_subtitle: "On-Device Searchable PDF Engine powered by Apple Neural Engine",
+    tag_accel: "Hardware Accelerated",
+    tag_local: "Local Processing",
+    section1_title: "1. 파일 선택 (Source Document)",
+    drop_primary: "PDF 또는 이미지 파일을 드래그하여 놓거나 클릭하여 선택하십시오.",
+    drop_secondary: "지원 형식: PDF, PNG, JPEG, TIFF, WebP",
+    btn_change: "변경",
+    section2_title: "2. 옵션 설정 (Configuration)",
+    split_title: "2페이지 펼침면 분할 (Split Spreads)",
+    split_desc: "가로 방향 양면 스캔 페이지를 각각 세로 1페이지로 자동 분할합니다.",
+    reading_order_label: "페이지 진행 순서",
+    order_ltr: "좌측에서 우측 (Left-to-Right)",
+    order_rtl: "우측에서 좌측 (Right-to-Left, 일본 서적/만화)",
+    lang_label: "인식 언어 프로필",
+    opt_ko_en: "한국어 + 영어 (ko-KR, en-US)",
+    opt_ko: "한국어 전용 (ko-KR)",
+    opt_en: "영어 전용 (en-US)",
+    opt_ja_en: "일본어 + 영어 (ja-JP, en-US)",
+    opt_zh_en: "중국어 간체 + 영어 (zh-Hans, en-US)",
+    opt_all: "다국어 (한국어 + 영어 + 일본어)",
+    output_label: "생성 파일 형식",
+    out_pdf: "검색 가능한 PDF (Searchable PDF, 무손실 원본 보존)",
+    out_txt: "텍스트 파일 (.txt, 페이지 구분 표기)",
+    out_md: "마크다운 문서 (.md, 구조화 헤더)",
+    fast_title: "고속 모드 (Fast Mode)",
+    fast_desc: "인식 정확도 대신 처리 속도를 우선시합니다.",
+    btn_start: "OCR 처리 시작",
+    section3_title: "3. 처리 상태 및 결과 (Status & Output)",
+    idle_hint: "문서를 선택하고 옵션을 설정한 후 처리 시작 버튼을 클릭하십시오.",
+    status_processing: "처리 중 (Processing)",
+    metric_pages: "진행 페이지",
+    metric_eta: "예상 남은 시간",
+    metric_speed: "처리 속도",
+    result_completed: "완료됨",
+    dl_pdf_desc: "검색 및 텍스트 선택 가능 레이어가 적용된 원본 품질 PDF",
+    dl_txt_desc: "페이지별 구분자가 포함된 텍스트 본문",
+    dl_md_desc: "구조화된 헤더가 적용된 마크다운 문서",
+    action_download: "다운로드",
+    btn_open_finder: "Finder에서 파일 보기",
+    btn_preview: "텍스트 미리보기",
+    preview_header: "인식 텍스트 미리보기",
+    uploading: "업로드 중...",
+    ready: "준비 완료",
+    pages_suffix: "페이지",
+    init_engine: "엔진 초기화 중...",
+    unit_seconds: "초",
+    unit_speed: "초/p",
+    summary: (p, s, sp) => `${p}페이지 처리됨 (${s}초 소요, 페이지당 평균 ${sp}초)`
+  },
+  en: {
+    navbar_subtitle: "On-Device Searchable PDF Engine powered by Apple Neural Engine",
+    tag_accel: "Hardware Accelerated",
+    tag_local: "Local Processing",
+    section1_title: "1. Source Document",
+    drop_primary: "Drag and drop a PDF or image file, or click to browse.",
+    drop_secondary: "Supported formats: PDF, PNG, JPEG, TIFF, WebP",
+    btn_change: "Change",
+    section2_title: "2. Configuration",
+    split_title: "Split 2-Page Spreads",
+    split_desc: "Automatically split landscape two-page spreads into individual portrait pages.",
+    reading_order_label: "Reading Order",
+    order_ltr: "Left-to-Right (Standard)",
+    order_rtl: "Right-to-Left (e.g. Manga)",
+    lang_label: "Recognition Language Profile",
+    opt_ko_en: "Korean + English (ko-KR, en-US)",
+    opt_ko: "Korean Only (ko-KR)",
+    opt_en: "English Only (en-US)",
+    opt_ja_en: "Japanese + English (ja-JP, en-US)",
+    opt_zh_en: "Simplified Chinese + English (zh-Hans, en-US)",
+    opt_all: "Multilingual (ko-KR, en-US, ja-JP)",
+    output_label: "Output Formats",
+    out_pdf: "Searchable PDF (Lossless original preservation)",
+    out_txt: "Plain Text (.txt, page-delimited)",
+    out_md: "Markdown (.md, structured headers)",
+    fast_title: "Fast Recognition Mode",
+    fast_desc: "Prioritize throughput over maximum recognition accuracy.",
+    btn_start: "Start OCR Processing",
+    section3_title: "3. Status & Output",
+    idle_hint: "Select a document, configure options, and click Start OCR Processing.",
+    status_processing: "Processing",
+    metric_pages: "Pages Processed",
+    metric_eta: "Estimated Time Remaining",
+    metric_speed: "Processing Rate",
+    result_completed: "Completed",
+    dl_pdf_desc: "Lossless PDF with embedded invisible text layer for selection and search",
+    dl_txt_desc: "Structured text content partitioned by page number",
+    dl_md_desc: "Formatted Markdown document for Notion, Obsidian, and LLMs",
+    action_download: "Download",
+    btn_open_finder: "Reveal in Finder",
+    btn_preview: "Preview Extracted Text",
+    preview_header: "Extracted Text Preview",
+    uploading: "Uploading...",
+    ready: "Ready",
+    pages_suffix: "pages",
+    init_engine: "Initializing engine...",
+    unit_seconds: "s",
+    unit_speed: "s/p",
+    summary: (p, s, sp) => `${p} pages processed in ${s}s (${sp}s/page avg)`
+  }
+};
+
+let currentLang = localStorage.getItem('apple_vision_ocr_lang') || 'ko';
+
+function setLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem('apple_vision_ocr_lang', lang);
+
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === lang);
+  });
+
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.ko;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (t[key]) {
+      el.textContent = t[key];
+    }
+  });
+
+  document.documentElement.lang = lang;
+}
 
 document.addEventListener('DOMContentLoaded', () => {
+  setLanguage(currentLang);
+
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      setLanguage(btn.dataset.lang);
+      if (lastResult) {
+        renderCompletedSummary();
+      }
+    });
+  });
+
   const dropZone = document.getElementById('drop-zone');
   const fileInput = document.getElementById('file-input');
   const fileInfo = document.getElementById('file-info');
@@ -40,6 +175,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentUploadedFilePath = null;
   let lastResult = null;
   let activeEventSource = null;
+  let uploadedPageCount = null;
+  let uploadedSizeBytes = 0;
 
   splitSpreadsCheck.addEventListener('change', () => {
     if (splitSpreadsCheck.checked) {
@@ -93,10 +230,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function handleFileSelection(file) {
+    const t = TRANSLATIONS[currentLang];
     dropZone.classList.add('hidden');
     fileInfo.classList.remove('hidden');
     fileNameDisplay.textContent = file.name;
-    fileStatsDisplay.textContent = `${formatBytes(file.size)} (업로드 중...)`;
+    fileStatsDisplay.textContent = `${formatBytes(file.size)} (${t.uploading})`;
     startBtn.disabled = true;
 
     const formData = new FormData();
@@ -110,18 +248,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const data = await resp.json();
       if (!resp.ok || !data.success) {
-        const errorDetail = data.detail || '파일 업로드에 실패했습니다.';
-        alert(`오류: ${errorDetail}`);
+        const errorDetail = data.detail || (currentLang === 'ko' ? '파일 업로드에 실패했습니다.' : 'File upload failed.');
+        alert(errorDetail);
         resetFileSelection();
         return;
       }
 
       currentUploadedFilePath = data.file_path;
-      const pageInfo = data.page_count ? ` | ${data.page_count} 페이지` : '';
-      fileStatsDisplay.textContent = `${formatBytes(data.size_bytes)}${pageInfo} (준비 완료)`;
+      uploadedSizeBytes = data.size_bytes;
+      uploadedPageCount = data.page_count;
+
+      const pageInfo = uploadedPageCount ? ` | ${uploadedPageCount} ${t.pages_suffix}` : '';
+      fileStatsDisplay.textContent = `${formatBytes(uploadedSizeBytes)}${pageInfo} (${t.ready})`;
       startBtn.disabled = false;
     } catch (err) {
-      alert(`업로드 통신 오류: ${err.message}`);
+      alert(`Error: ${err.message}`);
       resetFileSelection();
     }
   }
@@ -142,12 +283,13 @@ document.addEventListener('DOMContentLoaded', () => {
       activeEventSource = null;
     }
 
+    const t = TRANSLATIONS[currentLang];
     idleView.classList.add('hidden');
     completedView.classList.add('hidden');
     processingView.classList.remove('hidden');
     startBtn.disabled = true;
 
-    updateProgressUI(0, 1, 0, '엔진 초기화 중...', '-', '-');
+    updateProgressUI(0, 1, 0, t.init_engine, '-', '-');
 
     const formData = new FormData();
     formData.append('file_path', currentUploadedFilePath);
@@ -166,14 +308,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const data = await resp.json();
       if (!resp.ok || !data.success) {
-        alert(`작업 시작 실패: ${data.detail || '서버 오류'}`);
+        alert(data.detail || 'Error starting process');
         showIdleView();
         return;
       }
 
       connectProgressStream(data.job_id);
     } catch (err) {
-      alert(`요청 오류: ${err.message}`);
+      alert(`Error: ${err.message}`);
       showIdleView();
     }
   });
@@ -192,9 +334,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     activeEventSource.onmessage = (event) => {
       const job = JSON.parse(event.data);
+      const t = TRANSLATIONS[currentLang];
 
-      const etaStr = job.eta_seconds !== undefined && job.eta_seconds > 0 ? `${job.eta_seconds}초` : '-';
-      const speedStr = job.speed ? `${job.speed}초/p` : '-';
+      const etaStr = job.eta_seconds !== undefined && job.eta_seconds > 0 ? `${job.eta_seconds}${t.unit_seconds}` : '-';
+      const speedStr = job.speed ? `${job.speed}${t.unit_speed}` : '-';
 
       updateProgressUI(
         job.current_page || 0,
@@ -212,7 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (job.status === 'failed') {
         activeEventSource.close();
         activeEventSource = null;
-        alert(`작업 실패: ${job.error || '알 수 없는 오류'}`);
+        alert(`Failed: ${job.error || 'Unknown error'}`);
         showIdleView();
       }
     };
@@ -238,12 +381,22 @@ document.addEventListener('DOMContentLoaded', () => {
           activeEventSource.close();
           activeEventSource = null;
         }
-        alert(`작업 실패: ${job.error || '오류'}`);
+        alert(`Failed: ${job.error || 'Error'}`);
         showIdleView();
       }
     } catch (e) {
       console.error(e);
     }
+  }
+
+  function renderCompletedSummary() {
+    if (!lastResult) return;
+    const t = TRANSLATIONS[currentLang];
+    statsSummary.textContent = t.summary(
+      lastResult.total_pages || 0,
+      lastResult.elapsed_seconds || 0,
+      lastResult.seconds_per_page || 0
+    );
   }
 
   function onJobCompleted(job) {
@@ -252,27 +405,25 @@ document.addEventListener('DOMContentLoaded', () => {
     startBtn.disabled = false;
 
     lastResult = job.result || {};
-    const res = lastResult;
-
-    statsSummary.textContent = `${res.total_pages || 0}페이지 처리됨 (${res.elapsed_seconds || 0}초 소요, 페이지당 평균 ${res.seconds_per_page || 0}초)`;
+    renderCompletedSummary();
 
     dlPdfBtn.href = `/api/download/${job.job_id}/pdf`;
-    if (res.output_txt) {
+    if (lastResult.output_txt) {
       dlTxtBtn.href = `/api/download/${job.job_id}/txt`;
       dlTxtBtn.style.display = 'flex';
     } else {
       dlTxtBtn.style.display = 'none';
     }
 
-    if (res.output_md) {
+    if (lastResult.output_md) {
       dlMdBtn.href = `/api/download/${job.job_id}/md`;
       dlMdBtn.style.display = 'flex';
     } else {
       dlMdBtn.style.display = 'none';
     }
 
-    if (res.preview_text) {
-      previewContent.textContent = res.preview_text;
+    if (lastResult.preview_text) {
+      previewContent.textContent = lastResult.preview_text;
       previewToggleBtn.style.display = 'inline-flex';
     } else {
       previewToggleBtn.style.display = 'none';
@@ -289,7 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
         body: formData
       });
     } catch (e) {
-      console.error('Finder 실행 실패:', e);
+      console.error('Finder error:', e);
     }
   });
 

@@ -12,11 +12,18 @@
     <header class="navbar">
       <div class="navbar-title">
         <h1>Apple Vision OCR</h1>
-        <p class="navbar-subtitle">On-Device Searchable PDF Engine powered by Apple Neural Engine</p>
+        <p class="navbar-subtitle" data-i18n="navbar_subtitle">On-Device Searchable PDF Engine powered by Apple Neural Engine</p>
       </div>
-      <div class="navbar-tags">
-        <span class="tag tag-neutral" id="engine-tag">Hardware Accelerated</span>
-        <span class="tag tag-neutral">Local Processing</span>
+      <div class="navbar-controls">
+        <div class="lang-switch">
+          <button type="button" class="lang-btn active" data-lang="ko">한국어</button>
+          <span class="lang-divider">|</span>
+          <button type="button" class="lang-btn" data-lang="en">English</button>
+        </div>
+        <div class="navbar-tags">
+          <span class="tag tag-neutral" data-i18n="tag_accel">Hardware Accelerated</span>
+          <span class="tag tag-neutral" data-i18n="tag_local">Local Processing</span>
+        </div>
       </div>
     </header>
 
@@ -25,7 +32,7 @@
       <!-- Left Column: Input and Configuration -->
       <section class="panel">
         <div class="panel-header">
-          <h2>1. 파일 선택 (Source Document)</h2>
+          <h2 data-i18n="section1_title">1. 파일 선택 (Source Document)</h2>
         </div>
 
         <div class="drop-zone" id="drop-zone">
@@ -38,8 +45,8 @@
               <line x1="9" y1="15" x2="15" y2="15"></line>
             </svg>
           </div>
-          <p class="drop-primary">PDF 또는 이미지 파일을 드래그하여 놓거나 클릭하여 선택하십시오.</p>
-          <p class="drop-secondary">지원 형식: PDF, PNG, JPEG, TIFF, WebP</p>
+          <p class="drop-primary" data-i18n="drop_primary">PDF 또는 이미지 파일을 드래그하여 놓거나 클릭하여 선택하십시오.</p>
+          <p class="drop-secondary" data-i18n="drop_secondary">지원 형식: PDF, PNG, JPEG, TIFF, WebP</p>
         </div>
 
         <div id="file-info" class="file-card hidden">
@@ -47,57 +54,57 @@
             <div class="file-name" id="selected-file-name">-</div>
             <div class="file-stats" id="selected-file-stats">-</div>
           </div>
-          <button type="button" class="btn btn-secondary btn-sm" id="change-file-btn">변경</button>
+          <button type="button" class="btn btn-secondary btn-sm" id="change-file-btn" data-i18n="btn_change">변경</button>
         </div>
 
         <div class="panel-header" style="margin-top: 24px;">
-          <h2>2. 옵션 설정 (Configuration)</h2>
+          <h2 data-i18n="section2_title">2. 옵션 설정 (Configuration)</h2>
         </div>
 
         <div class="form-group">
           <label class="toggle-row">
             <span class="toggle-text">
-              <span class="toggle-title">2페이지 펼침면 분할 (Split Spreads)</span>
-              <span class="toggle-description">가로 방향 양면 스캔 페이지를 각각 세로 1페이지로 자동 분할합니다.</span>
+              <span class="toggle-title" data-i18n="split_title">2페이지 펼침면 분할 (Split Spreads)</span>
+              <span class="toggle-description" data-i18n="split_desc">가로 방향 양면 스캔 페이지를 각각 세로 1페이지로 자동 분할합니다.</span>
             </span>
             <input type="checkbox" id="split-spreads" class="toggle-switch">
           </label>
 
           <div id="reading-order-container" class="sub-form-group hidden">
-            <label for="reading-order" class="field-label">페이지 진행 순서</label>
+            <label for="reading-order" class="field-label" data-i18n="reading_order_label">페이지 진행 순서</label>
             <select id="reading-order" class="select-field">
-              <option value="ltr">좌측에서 우측 (Left-to-Right)</option>
-              <option value="rtl">우측에서 좌측 (Right-to-Left, 일본 서적/만화)</option>
+              <option value="ltr" data-i18n="order_ltr">좌측에서 우측 (Left-to-Right)</option>
+              <option value="rtl" data-i18n="order_rtl">우측에서 좌측 (Right-to-Left, 일본 서적/만화)</option>
             </select>
           </div>
         </div>
 
         <div class="form-group">
-          <label for="language-select" class="field-label">인식 언어 프로필</label>
+          <label for="language-select" class="field-label" data-i18n="lang_label">인식 언어 프로필</label>
           <select id="language-select" class="select-field">
-            <option value="ko-en" selected>한국어 + 영어 (ko-KR, en-US)</option>
-            <option value="ko">한국어 전용 (ko-KR)</option>
-            <option value="en">영어 전용 (en-US)</option>
-            <option value="ja-en">일본어 + 영어 (ja-JP, en-US)</option>
-            <option value="zh-en">중국어 간체 + 영어 (zh-Hans, en-US)</option>
-            <option value="all">다국어 (한국어 + 영어 + 일본어)</option>
+            <option value="ko-en" data-i18n="opt_ko_en" selected>한국어 + 영어 (ko-KR, en-US)</option>
+            <option value="ko" data-i18n="opt_ko">한국어 전용 (ko-KR)</option>
+            <option value="en" data-i18n="opt_en">영어 전용 (en-US)</option>
+            <option value="ja-en" data-i18n="opt_ja_en">일본어 + 영어 (ja-JP, en-US)</option>
+            <option value="zh-en" data-i18n="opt_zh_en">중국어 간체 + 영어 (zh-Hans, en-US)</option>
+            <option value="all" data-i18n="opt_all">다국어 (한국어 + 영어 + 일본어)</option>
           </select>
         </div>
 
         <div class="form-group">
-          <span class="field-label">생성 파일 형식</span>
+          <span class="field-label" data-i18n="output_label">생성 파일 형식</span>
           <div class="checkbox-stack">
             <label class="checkbox-row">
               <input type="checkbox" id="gen-pdf" checked disabled>
-              <span>검색 가능한 PDF (Searchable PDF, 무손실 원본 보존)</span>
+              <span data-i18n="out_pdf">검색 가능한 PDF (Searchable PDF, 무손실 원본 보존)</span>
             </label>
             <label class="checkbox-row">
               <input type="checkbox" id="gen-txt" checked>
-              <span>텍스트 파일 (.txt, 페이지 구분 표기)</span>
+              <span data-i18n="out_txt">텍스트 파일 (.txt, 페이지 구분 표기)</span>
             </label>
             <label class="checkbox-row">
               <input type="checkbox" id="gen-md" checked>
-              <span>마크다운 문서 (.md, 구조화 헤더)</span>
+              <span data-i18n="out_md">마크다운 문서 (.md, 구조화 헤더)</span>
             </label>
           </div>
         </div>
@@ -105,14 +112,14 @@
         <div class="form-group">
           <label class="toggle-row">
             <span class="toggle-text">
-              <span class="toggle-title">고속 모드 (Fast Mode)</span>
-              <span class="toggle-description">인식 정확도 대신 처리 속도를 우선시합니다.</span>
+              <span class="toggle-title" data-i18n="fast_title">고속 모드 (Fast Mode)</span>
+              <span class="toggle-description" data-i18n="fast_desc">인식 정확도 대신 처리 속도를 우선시합니다.</span>
             </span>
             <input type="checkbox" id="fast-mode" class="toggle-switch">
           </label>
         </div>
 
-        <button type="button" class="btn btn-primary btn-full" id="start-btn" disabled>
+        <button type="button" class="btn btn-primary btn-full" id="start-btn" data-i18n="btn_start" disabled>
           OCR 처리 시작
         </button>
       </section>
@@ -120,18 +127,18 @@
       <!-- Right Column: Status and Results -->
       <section class="panel">
         <div class="panel-header">
-          <h2>3. 처리 상태 및 결과 (Status & Output)</h2>
+          <h2 data-i18n="section3_title">3. 처리 상태 및 결과 (Status & Output)</h2>
         </div>
 
         <!-- Idle State -->
         <div id="idle-view" class="state-container">
-          <p class="state-hint">문서를 선택하고 옵션을 설정한 후 처리 시작 버튼을 클릭하십시오.</p>
+          <p class="state-hint" data-i18n="idle_hint">문서를 선택하고 옵션을 설정한 후 처리 시작 버튼을 클릭하십시오.</p>
         </div>
 
         <!-- Processing State -->
         <div id="processing-view" class="state-container hidden">
           <div class="progress-meta">
-            <span class="status-indicator">처리 중 (Processing)</span>
+            <span class="status-indicator" data-i18n="status_processing">처리 중 (Processing)</span>
             <span class="progress-number" id="progress-percent">0%</span>
           </div>
 
@@ -141,26 +148,26 @@
 
           <div class="metrics-table">
             <div class="metric-cell">
-              <span class="metric-header">진행 페이지</span>
+              <span class="metric-header" data-i18n="metric_pages">진행 페이지</span>
               <span class="metric-data" id="pages-metric">-</span>
             </div>
             <div class="metric-cell">
-              <span class="metric-header">예상 남은 시간</span>
+              <span class="metric-header" data-i18n="metric_eta">예상 남은 시간</span>
               <span class="metric-data" id="eta-metric">-</span>
             </div>
             <div class="metric-cell">
-              <span class="metric-header">처리 속도</span>
+              <span class="metric-header" data-i18n="metric_speed">처리 속도</span>
               <span class="metric-data" id="speed-metric">-</span>
             </div>
           </div>
 
-          <div class="status-log-line" id="status-message">엔진 초기화 중...</div>
+          <div class="status-log-line" id="status-message">-</div>
         </div>
 
         <!-- Completed State -->
         <div id="completed-view" class="state-container hidden">
           <div class="result-banner">
-            <div class="result-title" id="result-status-title">완료됨</div>
+            <div class="result-title" id="result-status-title" data-i18n="result_completed">완료됨</div>
             <div class="result-description" id="stats-summary">-</div>
           </div>
 
@@ -168,39 +175,39 @@
             <a href="#" class="download-item" id="dl-pdf-btn">
               <div class="download-details">
                 <span class="download-name">Searchable PDF</span>
-                <span class="download-type">검색 및 텍스트 선택 가능 레이어가 적용된 원본 품질 PDF</span>
+                <span class="download-type" data-i18n="dl_pdf_desc">검색 및 텍스트 선택 가능 레이어가 적용된 원본 품질 PDF</span>
               </div>
-              <span class="download-action">다운로드</span>
+              <span class="download-action" data-i18n="action_download">다운로드</span>
             </a>
 
             <a href="#" class="download-item" id="dl-txt-btn">
               <div class="download-details">
                 <span class="download-name">Plain Text (.txt)</span>
-                <span class="download-type">페이지별 구분자가 포함된 텍스트 본문</span>
+                <span class="download-type" data-i18n="dl_txt_desc">페이지별 구분자가 포함된 텍스트 본문</span>
               </div>
-              <span class="download-action">다운로드</span>
+              <span class="download-action" data-i18n="action_download">다운로드</span>
             </a>
 
             <a href="#" class="download-item" id="dl-md-btn">
               <div class="download-details">
                 <span class="download-name">Markdown (.md)</span>
-                <span class="download-type">구조화된 헤더가 적용된 마크다운 문서</span>
+                <span class="download-type" data-i18n="dl_md_desc">구조화된 헤더가 적용된 마크다운 문서</span>
               </div>
-              <span class="download-action">다운로드</span>
+              <span class="download-action" data-i18n="action_download">다운로드</span>
             </a>
           </div>
 
           <div class="actions-row">
-            <button type="button" class="btn btn-secondary" id="open-finder-btn">
+            <button type="button" class="btn btn-secondary" id="open-finder-btn" data-i18n="btn_open_finder">
               Finder에서 파일 보기
             </button>
-            <button type="button" class="btn btn-secondary" id="preview-toggle-btn">
+            <button type="button" class="btn btn-secondary" id="preview-toggle-btn" data-i18n="btn_preview">
               텍스트 미리보기
             </button>
           </div>
 
           <div id="preview-panel" class="preview-box hidden">
-            <div class="preview-header">인식 텍스트 미리보기</div>
+            <div class="preview-header" data-i18n="preview_header">인식 텍스트 미리보기</div>
             <pre id="preview-content" class="preview-text"></pre>
           </div>
         </div>

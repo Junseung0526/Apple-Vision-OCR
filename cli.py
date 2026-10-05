@@ -2,12 +2,14 @@
 """
 Apple-Vision-OCR CLI
 Command-line interface for local Apple Silicon Vision OCR processing.
+Supports bilingual output (Korean and English).
 """
 
 import sys
 import os
 import argparse
 import time
+import locale
 import logging
 import subprocess
 from pathlib import Path
@@ -19,6 +21,49 @@ logging.basicConfig(
     datefmt="%H:%M:%S"
 )
 logger = logging.getLogger("apple_vision_ocr.cli")
+
+CLI_STRINGS = {
+    "ko": {
+        "title": "Apple-Vision-OCR (CLI)",
+        "target": "대상 파일:   ",
+        "size": "파일 크기:   ",
+        "languages": "인식 언어:   ",
+        "spread_split": "펼침면 분할: ",
+        "enabled": "활성화됨",
+        "status_done": "상태: 완료",
+        "pages": "페이지",
+        "seconds": "초",
+        "sec_per_page": "초/페이지",
+        "generated_files": "생성된 파일:",
+        "aborted": "[중단] 사용자에 의해 작업이 취소되었습니다.",
+        "error_prefix": "[오류]"
+    },
+    "en": {
+        "title": "Apple-Vision-OCR (CLI)",
+        "target": "Target:       ",
+        "size": "Size:         ",
+        "languages": "Languages:    ",
+        "spread_split": "Spread Split: ",
+        "enabled": "Enabled",
+        "status_done": "Status: Completed",
+        "pages": "pages",
+        "seconds": "s",
+        "sec_per_page": "s/page",
+        "generated_files": "Generated files:",
+        "aborted": "[ABORTED] Process interrupted by user.",
+        "error_prefix": "[ERROR]"
+    }
+}
+
+
+def detect_default_locale() -> str:
+    try:
+        lang, _ = locale.getdefaultlocale()
+        if lang and "ko" in lang.lower():
+            return "ko"
+    except Exception:
+        pass
+    return "en"
 
 
 def render_progress_bar(curr: int, tot: int, msg: str):
@@ -36,6 +81,8 @@ def main():
         sys.stderr.write("[ERROR] 'mac-ocr' binary not found. Install via 'npm install -g mac-ocr'.\n")
         sys.exit(1)
 
+    default_loc = detect_default_locale()
+
     parser = argparse.ArgumentParser(
         prog="apple-vision-ocr",
         description="Local, lossless Searchable PDF generator using Apple Vision Framework.",
@@ -50,6 +97,9 @@ Examples:
 
   # Right-to-Left spread order (Japanese / Manga)
   python cli.py manga.pdf --split-spread --rtl --lang ja-en
+
+  # Set CLI interface language
+  python cli.py scan.pdf --locale ko
 
   # Open result in macOS Finder upon completion
   python cli.py scan.pdf --open
@@ -66,35 +116,37 @@ Examples:
     parser.add_argument("--no-txt", action="store_true", help="Do not generate .txt file")
     parser.add_argument("--no-md", action="store_true", help="Do not generate .md file")
     parser.add_argument("--open", action="store_true", help="Reveal generated PDF in Finder upon completion")
+    parser.add_argument("--locale", choices=["ko", "en"], default=default_loc, help="Interface language (default: system locale)")
 
     args = parser.parse_args()
+    msg = CLI_STRINGS[args.locale]
 
     input_file = Path(args.input).resolve()
     if not input_file.exists():
-        sys.stderr.write(f"[ERROR] Input file not found: {args.input}\n")
+        sys.stderr.write(f"{msg['error_prefix']} Input file not found: {args.input}\n")
         sys.exit(1)
 
     selected_langs = list(SUPPORTED_LANGUAGES.get(args.lang, ("ko-KR", "en-US")))
     reading_order = "rtl" if args.rtl else "ltr"
 
     print("============================================================")
-    print(" Apple-Vision-OCR (CLI)")
+    print(f" {msg['title']}")
     print("============================================================")
-    print(f"Target:       {input_file.name}")
-    print(f"Size:         {round(input_file.stat().st_size / (1024 * 1024), 2)} MB")
-    print(f"Languages:    {', '.join(selected_langs)}")
+    print(f"{msg['target']}{input_file.name}")
+    print(f"{msg['size']}{round(input_file.stat().st_size / (1024 * 1024), 2)} MB")
+    print(f"{msg['languages']}{', '.join(selected_langs)}")
     if args.split_spread:
-        print(f"Spread Split: Enabled ({reading_order.upper()})")
+        print(f"{msg['spread_split']}{msg['enabled']} ({reading_order.upper()})")
     print("------------------------------------------------------------")
 
     last_pct = -1
 
-    def progress_callback(curr: int, tot: int, msg: str):
+    def progress_callback(curr: int, tot: int, p_msg: str):
         nonlocal last_pct
         pct = int((curr / tot) * 100) if tot > 0 else 0
         if pct != last_pct or curr == tot:
             last_pct = pct
-            render_progress_bar(curr, tot, msg)
+            render_progress_bar(curr, tot, p_msg)
 
     try:
         res = process_ocr(
@@ -109,8 +161,8 @@ Examples:
             progress_callback=progress_callback
         )
         print("\n------------------------------------------------------------")
-        print(f"Status: Completed ({res['total_pages']} pages, {res['elapsed_seconds']}s, {res['seconds_per_page']}s/page)")
-        print("Generated files:")
+        print(f"{msg['status_done']} ({res['total_pages']} {msg['pages']}, {res['elapsed_seconds']}{msg['seconds']}, {res['seconds_per_page']}{msg['sec_per_page']})")
+        print(msg["generated_files"])
         if res.get("output_pdf"):
             print(f"  PDF: {res['output_pdf']}")
         if res.get("output_txt"):
@@ -122,10 +174,10 @@ Examples:
             subprocess.run(["open", "-R", res["output_pdf"]])
 
     except KeyboardInterrupt:
-        print("\n[ABORTED] Process interrupted by user.")
+        print(f"\n{msg['aborted']}")
         sys.exit(130)
     except Exception as e:
-        print(f"\n[ERROR] {e}")
+        print(f"\n{msg['error_prefix']} {e}")
         sys.exit(1)
 
 
